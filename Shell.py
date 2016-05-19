@@ -74,7 +74,7 @@ def RecCmds(s):
     while strmCol[0].IsAlive() and strmCol[1].IsAlive() and s:
         stdIn = s.recv(1024)
         if len(stdIn) > 0:
-            cmd.stdin.write(stdIn+'\n')
+            cmd.stdin.write(stdIn)
             toSend = ''
             while True:
                 stdOut = StdOutRead(strmCol);
