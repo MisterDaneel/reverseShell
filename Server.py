@@ -23,6 +23,7 @@ import time
 
 host = '0.0.0.0'
 port = 8080
+BUFF_SIZE = 4096
 
 def NewSocket():
     try:
@@ -42,27 +43,34 @@ def AcceptConnection(s):
             print "[*] Listening on [" + host + "] (port " + str(port) + ")."
             conn, addr = s.accept()
             print "[*] Connection from [" + addr[0] + "] port " + str(port) + " [tcp/*] accepted (sport " + str(addr[1]) + ")."
-            SndCmds(conn)
-        else: break
+            SndCmds(conn, "%s:%s" % (addr[0], addr[1]))
+        else:
+            break
 
-def SndCmds(conn):
+def SndCmds(conn, addr):
     try:
+        title = conn.recv(BUFF_SIZE)
+
         while True:
-            # wait for data
-            recv_len = 1
-            response = ''
-            while recv_len and not response[-1:] == '>':
-                data = conn.recv(4096)
-                recv_len = len(data)
-                response += data
-                if recv_len == 0:
-                    break
-            print response
-            # wait for more input
-            buffer = raw_input('>')
+
+            buffer = raw_input("%s@%s> " % (addr, title))
             buffer += '\n'
             conn.send(buffer)
-            time.sleep(.1)
+
+            time.sleep(.2)
+
+            # wait for data
+            response = ''
+            while True:
+                data = conn.recv(BUFF_SIZE)
+                response += data
+                if len(data) < BUFF_SIZE:
+                    break
+
+            if response and len(response.split('\n')) > 1:
+                title = response[response.rfind('\n')+1:]
+                print response[response.find('\n')+1:response.rfind('\n')]
+
     except:
         print '[*] Exception. Exiting.'
         conn.close()
